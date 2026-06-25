@@ -13,11 +13,12 @@ connection.authenticate()
 {
     console.log("error occured")
 })
- const users = require("./../models/usersmodel")(connection,sequelize.DataTypes)
+const teams =require("./../models/teammodel") (connection,sequelize.DataTypes)
+const users = require("./../models/usersmodel")(connection,sequelize.DataTypes)
 const blogs = require("./../models/blogsmodel")(connection,sequelize.DataTypes)
 const products = require("./../models/productsmodels")(connection,sequelize.DataTypes)
 connection.sync({alter:false}).then(function(){
     console.log("migrate succesfully")
 })
 
-module.exports= {connection,users}
+module.exports= {connection,users,teams}
