@@ -7,10 +7,7 @@ function userController(req,res){
 
 
 
-function homeController(req,res){
-    res.json({
-        msg:"this is home"})
-    }
+
 //await used garda async used garney
 async function Registeruser(req,res){
     const email = req.body.email
@@ -80,4 +77,4 @@ if(data.length ==0){
         message:"login user called"
     })
 }
-module.exports={userController,homeController,Registeruser,Loginuser}
+module.exports={userController,Registeruser,Loginuser}

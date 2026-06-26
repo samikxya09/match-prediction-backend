@@ -15,4 +15,26 @@ const { teams } = require("../database/connection")
   })
 
 }
-module.exports= Registerteam
+//for get request
+async function fetchteams(req,res){
+   const data = await teams.findAll()
+   res.status(200).json({
+      message: "team fetched sucessfully",
+      data : data
+   })
+}
+
+// for delete
+
+async function deleteteams(req,res){
+   const id = req.params.id
+   await teams.destroy({
+      where:{
+         id : id
+      }
+   })
+   res.status(200).json({
+      message:"team deleted succesfully"
+   })
+}
+module.exports={ Registerteam ,fetchteams,deleteteams }
