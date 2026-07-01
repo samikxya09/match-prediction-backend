@@ -4,6 +4,7 @@ const { userController, Registeruser, Loginuser } = require("./controllers/userC
 const { fetchteams, Registerteam, deleteteams } = require("./controllers/teamContoller.js")
 const {registermatch,fetchmatches, deletematches} = require("./controllers/matchController.js")
 const authenticationmiddleware = require("./middleware/middleware.js")
+
 const app=express()
 app.use(express.json())
 
@@ -16,9 +17,9 @@ app.get("/about",userController)
 app.post("/register",Registeruser)
 app.post("/login",Loginuser)
 
-app.post("/createteam",authenticationmiddleware,Registerteam)
-app.get("/fetch-teams",authenticationmiddleware,fetchteams)
-app.delete("/delete-team/:id",authenticationmiddleware,deleteteams)
+app.post("/createteam",authenticationmiddleware.adminauthenticationmiddleware,Registerteam)
+app.get("/fetch-teams",authenticationmiddleware.adminauthenticationmiddleware,fetchteams)
+app.delete("/delete-team/:id",authenticationmiddleware.adminauthenticationmiddleware,deleteteams)
 
 
 
