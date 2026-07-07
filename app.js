@@ -19,17 +19,17 @@ app.get("/about", userController);
 app.post("/register", Registeruser);
 app.post("/login", Loginuser);
 
-// Team Management Routes (Admin Auth required)
+// Team Management Routes (Admin Auth required to create/delete, Login required to view)
 app.post("/createteam", authenticationmiddleware.adminauthenticationmiddleware, Registerteam);
-app.get("/fetch-teams", authenticationmiddleware.adminauthenticationmiddleware, fetchteams);
+app.get("/fetch-teams", authenticationmiddleware.loginauthenticationmiddleware, fetchteams);
 app.delete("/delete-team/:id", authenticationmiddleware.adminauthenticationmiddleware, deleteteams);
 
-// Match Prediction / Scheduling Routes
+// Match Prediction / Scheduling Routes (Admin Auth required to create/delete)
 // In the original design, team-match was mapped to Registerteam. We corrected this to registermatch.
-app.post("/team-match", registermatch);
+app.post("/team-match", authenticationmiddleware.adminauthenticationmiddleware, registermatch);
 app.get("/fetch-matches", fetchmatches);
 app.get("/fetchteam", fetchmatches); // Backward compatibility
-app.delete("/delete-match/:id", deletematches);
+app.delete("/delete-match/:id", authenticationmiddleware.adminauthenticationmiddleware, deletematches);
 
 // Start Server
 const PORT = 3000;
