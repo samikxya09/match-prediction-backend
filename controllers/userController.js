@@ -1,80 +1,118 @@
-const { users } = require("../database/connection")
-const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
-function userController(req,res){
-    res.json({msg:"<h1>this is about page</h1>"})
+const { users } = require("../database/connection");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+// JWT Secret Key (consistent with middleware secret)
+const JWT_SECRET = "hahahehhuh";
+
+/**
+ * Controller to handle API health check or about information
+ */
+function userController(req, res) {
+  return res.json({ msg: "Match Prediction API v1.0.0" });
 }
 
+/**
+ * Controller to handle user registration
+ * Validates request payload, checks for duplicate email, and hashes password
+ */
+async function Registeruser(req, res) {
+  try {
+    const { name, email, password } = req.body;
 
-
-
-//await used garda async used garney
-async function Registeruser(req,res){
-    const email = req.body.email
-    const name = req.body.name
-    const password = req.body.password
-
-    //const {email,name,pass}=req.body  alternartive
-//checking wether the user tryng to register email,tyo email uses table xa ki nai already exist then show error if not register
- const data = await users.findAll({
-    where:{
-        email:email
+    // Validate request inputs
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "Missing required fields: name, email, and password are required."
+      });
     }
-}) 
-console.log(data)
 
-if(data.length==0){
-    console.log(data)
-    await users.create({
-        name: name,  //left sude(columnname) : rightside(value)
-        email:email,
-        password:bcrypt.hashSync(password,8)
-    })
-    res.status(200).json({
-        message:"register is called"
-    })
-}
-else{
-    res.status(400).json({
-        message: "registered with that email already registered,try with another one!"
-    })
-}
-}
-
- async function Loginuser(req,res){
-  const email = req.body.email
-  const password =req.body.password
-//check email
-const data = await users.findAll({
-    where:{
-        email:email
+    // Check if the user is already registered with this email
+    const existingUser = await users.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "This email is already registered. Please login or try another one."
+      });
     }
-}) 
-console.log(data)
-if(data.length ==0){
-    res.status(400).json({
-        message:"invalid email"
 
-})
-}else{
-    //email exist,aba password check garney
-    const ismatched = bcrypt.compareSync(password,data[0].password)
-    if(ismatched){
-        //token generation jwt
-        const token =jwt.sign({id: data[0].id},"hahahehhuh",{expiresIn : "1d"})
-        res.status(200).json({
-            message:"logged in successfully",
-            token : token
+    // Hash password and create user in database
+    const hashedPassword = bcrypt.hashSync(password, 8);
+    const newUser = await users.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: req.body.role || "user" // Default to user if not specified
+    });
 
-        })
-     } else {
-        res.status(403).json({
-            message:"inavalid password"
-        })
-     }
+    return res.status(200).json({
+      message: "User registered successfully.",
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email
+      }
+    });
+  } catch (error) {
+    console.error("Registration Error:", error);
+    return res.status(500).json({
+      message: "An error occurred during registration. Please try again later."
+    });
+  }
 }
-    req.status(200).json({
-        message:"login user called"
-    })
+
+/**
+ * Controller to handle user login
+ * Verifies email and password, generates JWT token on success
+ */
+async function Loginuser(req, res) {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Please provide email and password."
+      });
+    }
+
+    // Retrieve user by email
+    const user = await users.findOne({ where: { email } });
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid email or password."
+      });
+    }
+
+    // Verify password match
+    const isMatched = bcrypt.compareSync(password, user.password);
+    if (!isMatched) {
+      return res.status(403).json({
+        message: "Invalid email or password."
+      });
+    }
+
+    // Generate JWT token valid for 1 day
+    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "1d" });
+
+    return res.status(200).json({
+      message: "Logged in successfully",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
+    return res.status(500).json({
+      message: "An error occurred during login. Please try again later."
+    });
+  }
 }
-module.exports={userController,Registeruser,Loginuser}
+
+module.exports = {
+  userController,
+  Registeruser,
+  Loginuser
+};

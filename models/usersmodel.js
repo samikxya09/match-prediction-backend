@@ -2,21 +2,21 @@ const { DataTypes } = require("sequelize")
 
 function users(sequelize,datatypes){
   const users = sequelize.define("users",{
-    name:{
-        type: datatypes.STRING,
-        allowNUll: false
+    name: {
+      type: datatypes.STRING,
+      allowNull: false
     },
-    email:{
-        type: datatypes.STRING,
-        allowNUll : false
+    email: {
+      type: datatypes.STRING,
+      allowNull: false
     },
-    password:{
-        type: datatypes.STRING
+    password: {
+      type: datatypes.STRING
     },
     role: {
-        type: datatypes.ENUM("admin","user"),
-        defaultvalue: "user",
-        allowNUll:false
+      type: datatypes.ENUM("admin", "user"),
+      defaultValue: "user",
+      allowNull: true
     }
     
  })

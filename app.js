@@ -1,35 +1,38 @@
-//import express from 'express' //es syntax
-const express= require("express")// cjs(common js) system
-const { userController, Registeruser, Loginuser } = require("./controllers/userController.js")
-const { fetchteams, Registerteam, deleteteams } = require("./controllers/teamContoller.js")
-const {registermatch,fetchmatches, deletematches} = require("./controllers/matchController.js")
-const authenticationmiddleware = require("./middleware/middleware.js")
+const express = require("express");
+const cors = require("cors");
+const { userController, Registeruser, Loginuser } = require("./controllers/userController.js");
+const { fetchteams, Registerteam, deleteteams } = require("./controllers/teamContoller.js");
+const { registermatch, fetchmatches, deletematches } = require("./controllers/matchController.js");
+const authenticationmiddleware = require("./middleware/middleware.js");
 
-const app=express()
-app.use(express.json())
+// Initialize database connection
+require("./database/connection.js");
 
+const app = express();
 
-require("./database/connection.js")
-//const app=require("express")()//
+// Global Middleware
+app.use(cors());
+app.use(express.json());
 
-app.get("/about",userController)
+// Auth & User Routes
+app.get("/about", userController);
+app.post("/register", Registeruser);
+app.post("/login", Loginuser);
 
-app.post("/register",Registeruser)
-app.post("/login",Loginuser)
+// Team Management Routes (Admin Auth required)
+app.post("/createteam", authenticationmiddleware.adminauthenticationmiddleware, Registerteam);
+app.get("/fetch-teams", authenticationmiddleware.adminauthenticationmiddleware, fetchteams);
+app.delete("/delete-team/:id", authenticationmiddleware.adminauthenticationmiddleware, deleteteams);
 
-app.post("/createteam",authenticationmiddleware.adminauthenticationmiddleware,Registerteam)
-app.get("/fetch-teams",authenticationmiddleware.adminauthenticationmiddleware,fetchteams)
-app.delete("/delete-team/:id",authenticationmiddleware.adminauthenticationmiddleware,deleteteams)
+// Match Prediction / Scheduling Routes
+// In the original design, team-match was mapped to Registerteam. We corrected this to registermatch.
+app.post("/team-match", registermatch);
+app.get("/fetch-matches", fetchmatches);
+app.get("/fetchteam", fetchmatches); // Backward compatibility
+app.delete("/delete-match/:id", deletematches);
 
-
-
-
-app.post("/team-match",Registerteam)
-app.get("/fetchteam",fetchmatches)
-app.delete("deletematch",deletematches)
-
-app.listen(3000,function(){
-    console.log("project started sucessfully at port 3000")
-})
-//export default express //es syntax
-//module.exports =express //cjs
+// Start Server
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server started successfully on port ${PORT}`);
+});

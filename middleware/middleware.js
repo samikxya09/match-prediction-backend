@@ -1,150 +1,122 @@
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
+const { users } = require("../database/connection");
 
- async function adminauthenticationmiddleware(req,res,next){
-//check if user is authenticated(loggedin) or not
+// JWT Secret Key used for signing tokens
+const JWT_SECRET = "hahahehhuh";
 
-const token = req.headers.token
-if(!token){
-    res.status(403).json({
-        message:"please provide token"
-    })
-}
-else{
-    //verify the token is exactly correct                                                                                                                                                           
-    const result= jwt.verify(token,"hahahehhuh")
-     const userid = result.id
-     const data= await users.findAll({
-        where:{
-            id:userid
-        }
+/**
+ * Middleware to authenticate and authorize administrator access.
+ * Verifies the JWT token and checks if the user role is 'admin'.
+ */
+async function adminauthenticationmiddleware(req, res, next) {
+  const token = req.headers.token;
+  if (!token) {
+    return res.status(403).json({
+      message: "Access denied. Please provide an authentication token."
+    });
+  }
 
-     })   
-     if(data.length ==0){
-        res,status(403).json({
-            message:"no user present with that userid,invalid"
-        })
-     }else{
-      if(data[0].role =="admin"){
-       next()
-      }else{
-        res.status(403).json({
-            message:"u dont have permission to perform this action"
-        })
-      }
-     }
-     next()
-}
-}
-////
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await users.findByPk(decoded.id);
 
+    if (!user) {
+      return res.status(403).json({
+        message: "Invalid token. User not found."
+      });
+    }
 
- async function userauthenticationmiddleware(req,res,next){
-//check if user is authenticated(loggedin) or not
+    if (user.role !== "admin") {
+      return res.status(403).json({
+        message: "Access forbidden. Admin role required to perform this action."
+      });
+    }
 
-const token = req.headers.token
-if(!token){
-    res.status(403).json({
-        message:"please provide token"
-    })
-}
-else{
-    //verify the token is exactly correct                                                                                                                                                           
-    const result= jwt.verify(token,"hahahehhuh")
-     const userid = result.id
-     const data= await users.findAll({
-        where:{
-            id:userid
-        }
-
-     })   
-     if(data.length ==0){
-        res,status(403).json({
-            message:"no user present with that userid,invalid"
-        })
-     }else{
-      if(data[0].role =="user"){
-       next()
-      }else{
-        res.status(403).json({
-            message:"u dont have permission to perform this action"
-        })
-      }
-     }
-     next()
-}
+    // Attach user to request object and proceed
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({
+      message: "Invalid or expired token.",
+      error: error.message
+    });
+  }
 }
 
+/**
+ * Middleware to authenticate and authorize regular user access.
+ * Verifies the JWT token and checks if the user role is 'user'.
+ */
+async function userauthenticationmiddleware(req, res, next) {
+  const token = req.headers.token;
+  if (!token) {
+    return res.status(403).json({
+      message: "Access denied. Please provide an authentication token."
+    });
+  }
 
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await users.findByPk(decoded.id);
 
- async function adminauthenticationmiddleware(req,res,next){
-//check if user is authenticated(loggedin) or not
+    if (!user) {
+      return res.status(403).json({
+        message: "Invalid token. User not found."
+      });
+    }
 
-const token = req.headers.token
-if(!token){
-    res.status(403).json({
-        message:"please provide token"
-    })
-}
-else{
-    //verify the token is exactly correct                                                                                                                                                           
-    const result= jwt.verify(token,"hahahehhuh")
-     const userid = result.id
-     const data= await users.findAll({
-        where:{
-            id:userid
-        }
+    // Admins should also be allowed to access general user routes
+    if (user.role !== "user" && user.role !== "admin") {
+      return res.status(403).json({
+        message: "Access forbidden. User or admin role required."
+      });
+    }
 
-     })   
-     if(data.length ==0){
-        res,status(403).json({
-            message:"no user present with that userid,invalid"
-        })
-     }else{
-      if(data[0].role =="admin"){
-       next()
-      }else{
-        res.status(403).json({
-            message:"u dont have permission to perform this action"
-        })
-      }
-     }
-     next()
-}
-}
-
-
-//login 
- async function loginauthenticationmiddleware(req,res,next){
-//check if user is authenticated(loggedin) or not
-
-const token = req.headers.token
-if(!token){
-    res.status(403).json({
-        message:"please provide token"
-    })
-}
-else{
-    //verify the token is exactly correct                                                                                                                                                           
-    const result= jwt.verify(token,"hahahehhuh")
-     const userid = result.id
-     const data= await users.findAll({
-        where:{
-            id:userid
-        }
-
-     })   
-     if(data.length ==0){
-        res,status(403).json({
-            message:"no user present with that userid,invalid"
-        })
-     }else{
-      
-       next()
-     }
-}
+    // Attach user to request object and proceed
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({
+      message: "Invalid or expired token.",
+      error: error.message
+    });
+  }
 }
 
+/**
+ * General middleware to check if a user is logged in, regardless of their role.
+ */
+async function loginauthenticationmiddleware(req, res, next) {
+  const token = req.headers.token;
+  if (!token) {
+    return res.status(403).json({
+      message: "Access denied. Please provide an authentication token."
+    });
+  }
 
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await users.findByPk(decoded.id);
 
+    if (!user) {
+      return res.status(403).json({
+        message: "Invalid token. User not found."
+      });
+    }
 
-module.exports = {adminauthenticationmiddleware,userauthenticationmiddleware,loginauthenticationmiddleware}
+    // Attach user to request object and proceed
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({
+      message: "Invalid or expired token.",
+      error: error.message
+    });
+  }
+}
+
+module.exports = {
+  adminauthenticationmiddleware,
+  userauthenticationmiddleware,
+  loginauthenticationmiddleware
+};

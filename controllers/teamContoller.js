@@ -1,40 +1,83 @@
-const { teams } = require("../database/connection")
+const { teams } = require("../database/connection");
 
- async function Registerteam(req,res){
-    const teamname = req.body.name
-    const teamcaptain= req.body.captain
-    const teamcoach = req.body.coach
+/**
+ * Controller to handle creating/registering a new team
+ */
+async function Registerteam(req, res) {
+  try {
+    const { name, captain, coach } = req.body;
 
- await teams.create({
-    teamname: teamname,
-    teamcaptain:teamcaptain,
-    teamcoach:teamcoach,
- })
-  res.status(200).json({
-   message: "team is called"
-  })
+    if (!name) {
+      return res.status(400).json({
+        message: "Team name is required."
+      });
+    }
 
+    const newTeam = await teams.create({
+      teamname: name,
+      teamcaptain: captain || "Unknown",
+      teamcoach: coach || "Unknown"
+    });
+
+    return res.status(200).json({
+      message: "Team created successfully",
+      data: newTeam
+    });
+  } catch (error) {
+    console.error("Team registration failed:", error);
+    return res.status(500).json({
+      message: "An error occurred while creating the team."
+    });
+  }
 }
-//for get request
-async function fetchteams(req,res){
-   const data = await teams.findAll()
-   res.status(200).json({
-      message: "team fetched sucessfully",
-      data : data
-   })
+
+/**
+ * Controller to fetch all registered teams
+ */
+async function fetchteams(req, res) {
+  try {
+    const data = await teams.findAll();
+    return res.status(200).json({
+      message: "Teams fetched successfully",
+      data
+    });
+  } catch (error) {
+    console.error("Fetch teams failed:", error);
+    return res.status(500).json({
+      message: "An error occurred while fetching teams."
+    });
+  }
 }
 
-// for delete
+/**
+ * Controller to delete a team by ID
+ */
+async function deleteteams(req, res) {
+  try {
+    const { id } = req.params;
 
-async function deleteteams(req,res){
-   const id = req.params.id
-   await teams.destroy({
-      where:{
-         id : id
-      }
-   })
-   res.status(200).json({
-      message:"team deleted succesfully"
-   })
+    const targetTeam = await teams.findByPk(id);
+    if (!targetTeam) {
+      return res.status(404).json({
+        message: "Team not found."
+      });
+    }
+
+    await targetTeam.destroy();
+
+    return res.status(200).json({
+      message: "Team deleted successfully."
+    });
+  } catch (error) {
+    console.error("Delete team failed:", error);
+    return res.status(500).json({
+      message: "An error occurred while deleting the team."
+    });
+  }
 }
-module.exports={ Registerteam ,fetchteams,deleteteams }
+
+module.exports = {
+  Registerteam,
+  fetchteams,
+  deleteteams
+};
